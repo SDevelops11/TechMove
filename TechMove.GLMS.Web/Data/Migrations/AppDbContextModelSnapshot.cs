@@ -17,6 +17,7 @@ namespace TechMove.GLMS.Web.Data.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
+                .HasDefaultSchema("glms")
                 .HasAnnotation("ProductVersion", "8.0.11")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
@@ -62,7 +63,7 @@ namespace TechMove.GLMS.Web.Data.Migrations
 
                     b.HasIndex("Name");
 
-                    b.ToTable("Clients", (string)null);
+                    b.ToTable("Clients", "glms");
 
                     b.HasData(
                         new
@@ -186,12 +187,16 @@ namespace TechMove.GLMS.Web.Data.Migrations
 
                     b.HasIndex("Status");
 
-                    b.ToTable("Contracts", (string)null);
+                    b.ToTable("Contracts", "glms");
 
                     b.HasData(
                         new
                         {
                             Id = 1,
+                            AgreementFileName = "CON-2026-0001_Signed_SLA.pdf",
+                            AgreementFilePath = "/uploads/contracts/Sample_Signed_Agreement.pdf",
+                            AgreementFileSizeBytes = 845L,
+                            AgreementUploadedAt = new DateTime(2026, 1, 15, 0, 0, 0, 0, DateTimeKind.Utc),
                             ClientId = 1,
                             ContractNumber = "CON-2026-0001",
                             ContractType = "Premium",
@@ -309,7 +314,7 @@ namespace TechMove.GLMS.Web.Data.Migrations
 
                     b.HasIndex("ContractId");
 
-                    b.ToTable("ContractStatusLogs", (string)null);
+                    b.ToTable("ContractStatusLogs", "glms");
 
                     b.HasData(
                         new
@@ -413,7 +418,7 @@ namespace TechMove.GLMS.Web.Data.Migrations
                     b.HasIndex("RequestNumber")
                         .IsUnique();
 
-                    b.ToTable("ServiceRequests", (string)null);
+                    b.ToTable("ServiceRequests", "glms");
 
                     b.HasData(
                         new

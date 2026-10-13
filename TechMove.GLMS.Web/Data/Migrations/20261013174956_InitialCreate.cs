@@ -13,8 +13,12 @@ namespace TechMove.GLMS.Web.Data.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.EnsureSchema(
+                name: "glms");
+
             migrationBuilder.CreateTable(
                 name: "Clients",
+                schema: "glms",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
@@ -33,6 +37,7 @@ namespace TechMove.GLMS.Web.Data.Migrations
 
             migrationBuilder.CreateTable(
                 name: "Contracts",
+                schema: "glms",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
@@ -60,6 +65,7 @@ namespace TechMove.GLMS.Web.Data.Migrations
                     table.ForeignKey(
                         name: "FK_Contracts_Clients_ClientId",
                         column: x => x.ClientId,
+                        principalSchema: "glms",
                         principalTable: "Clients",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
@@ -67,6 +73,7 @@ namespace TechMove.GLMS.Web.Data.Migrations
 
             migrationBuilder.CreateTable(
                 name: "ContractStatusLogs",
+                schema: "glms",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
@@ -84,6 +91,7 @@ namespace TechMove.GLMS.Web.Data.Migrations
                     table.ForeignKey(
                         name: "FK_ContractStatusLogs_Contracts_ContractId",
                         column: x => x.ContractId,
+                        principalSchema: "glms",
                         principalTable: "Contracts",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
@@ -91,6 +99,7 @@ namespace TechMove.GLMS.Web.Data.Migrations
 
             migrationBuilder.CreateTable(
                 name: "ServiceRequests",
+                schema: "glms",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
@@ -113,12 +122,14 @@ namespace TechMove.GLMS.Web.Data.Migrations
                     table.ForeignKey(
                         name: "FK_ServiceRequests_Contracts_ContractId",
                         column: x => x.ContractId,
+                        principalSchema: "glms",
                         principalTable: "Contracts",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.InsertData(
+                schema: "glms",
                 table: "Clients",
                 columns: new[] { "Id", "ContactEmail", "ContactPerson", "ContactPhone", "CreatedAt", "Name", "Region" },
                 values: new object[,]
@@ -130,11 +141,12 @@ namespace TechMove.GLMS.Web.Data.Migrations
                 });
 
             migrationBuilder.InsertData(
+                schema: "glms",
                 table: "Contracts",
                 columns: new[] { "Id", "AgreementFileName", "AgreementFilePath", "AgreementFileSizeBytes", "AgreementUploadedAt", "ClientId", "ContractNumber", "ContractType", "CreatedAt", "EndDate", "EstimatedValueUsd", "EstimatedValueZar", "ServiceLevel", "StartDate", "Status", "Title", "UpdatedAt" },
                 values: new object[,]
                 {
-                    { 1, null, null, null, null, 1, "CON-2026-0001", "Premium", new DateTime(2026, 1, 15, 0, 0, 0, 0, DateTimeKind.Utc), new DateTime(2026, 12, 31, 0, 0, 0, 0, DateTimeKind.Utc), 250000.00m, 4625000.00m, "Premium", new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), "Active", "Annual Durban-Joburg Intermodal Freight SLA", new DateTime(2026, 1, 15, 0, 0, 0, 0, DateTimeKind.Utc) },
+                    { 1, "CON-2026-0001_Signed_SLA.pdf", "/uploads/contracts/Sample_Signed_Agreement.pdf", 845L, new DateTime(2026, 1, 15, 0, 0, 0, 0, DateTimeKind.Utc), 1, "CON-2026-0001", "Premium", new DateTime(2026, 1, 15, 0, 0, 0, 0, DateTimeKind.Utc), new DateTime(2026, 12, 31, 0, 0, 0, 0, DateTimeKind.Utc), 250000.00m, 4625000.00m, "Premium", new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), "Active", "Annual Durban-Joburg Intermodal Freight SLA", new DateTime(2026, 1, 15, 0, 0, 0, 0, DateTimeKind.Utc) },
                     { 2, null, null, null, null, 2, "CON-2026-0002", "Standard", new DateTime(2026, 1, 15, 0, 0, 0, 0, DateTimeKind.Utc), new DateTime(2026, 8, 31, 0, 0, 0, 0, DateTimeKind.Utc), 120000.00m, 2220000.00m, "Standard", new DateTime(2026, 2, 1, 0, 0, 0, 0, DateTimeKind.Utc), "Active", "Regional Bulk Cargo Haulage Agreement", new DateTime(2026, 1, 15, 0, 0, 0, 0, DateTimeKind.Utc) },
                     { 3, null, null, null, null, 3, "CON-2026-0003", "Express", new DateTime(2026, 1, 15, 0, 0, 0, 0, DateTimeKind.Utc), new DateTime(2027, 2, 28, 0, 0, 0, 0, DateTimeKind.Utc), 95000.00m, 1757500.00m, "Express", new DateTime(2026, 3, 1, 0, 0, 0, 0, DateTimeKind.Utc), "OnHold", "Cold Chain Pharmaceutical Distribution SLA", new DateTime(2026, 1, 15, 0, 0, 0, 0, DateTimeKind.Utc) },
                     { 4, null, null, null, null, 4, "CON-2026-0004", "International", new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), new DateTime(2025, 12, 31, 0, 0, 0, 0, DateTimeKind.Utc), 500000.00m, 9250000.00m, "International", new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), "Expired", "Cross-Border Maritime Container Clearance", new DateTime(2025, 12, 31, 0, 0, 0, 0, DateTimeKind.Utc) },
@@ -142,6 +154,7 @@ namespace TechMove.GLMS.Web.Data.Migrations
                 });
 
             migrationBuilder.InsertData(
+                schema: "glms",
                 table: "ContractStatusLogs",
                 columns: new[] { "Id", "ActionTaken", "ContractId", "Department", "NewStatus", "OldStatus", "Timestamp" },
                 values: new object[,]
@@ -153,6 +166,7 @@ namespace TechMove.GLMS.Web.Data.Migrations
                 });
 
             migrationBuilder.InsertData(
+                schema: "glms",
                 table: "ServiceRequests",
                 columns: new[] { "Id", "ContractId", "Cost", "CreatedDate", "Description", "Destination", "ExchangeRateUsed", "Origin", "OriginalCostUsd", "OriginalCurrency", "RequestNumber", "Status" },
                 values: new object[,]
@@ -164,47 +178,56 @@ namespace TechMove.GLMS.Web.Data.Migrations
 
             migrationBuilder.CreateIndex(
                 name: "IX_Clients_Name",
+                schema: "glms",
                 table: "Clients",
                 column: "Name");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Contracts_ClientId",
+                schema: "glms",
                 table: "Contracts",
                 column: "ClientId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Contracts_ContractNumber",
+                schema: "glms",
                 table: "Contracts",
                 column: "ContractNumber",
                 unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_Contracts_EndDate",
+                schema: "glms",
                 table: "Contracts",
                 column: "EndDate");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Contracts_StartDate",
+                schema: "glms",
                 table: "Contracts",
                 column: "StartDate");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Contracts_Status",
+                schema: "glms",
                 table: "Contracts",
                 column: "Status");
 
             migrationBuilder.CreateIndex(
                 name: "IX_ContractStatusLogs_ContractId",
+                schema: "glms",
                 table: "ContractStatusLogs",
                 column: "ContractId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_ServiceRequests_ContractId",
+                schema: "glms",
                 table: "ServiceRequests",
                 column: "ContractId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_ServiceRequests_RequestNumber",
+                schema: "glms",
                 table: "ServiceRequests",
                 column: "RequestNumber",
                 unique: true);
@@ -214,16 +237,20 @@ namespace TechMove.GLMS.Web.Data.Migrations
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropTable(
-                name: "ContractStatusLogs");
+                name: "ContractStatusLogs",
+                schema: "glms");
 
             migrationBuilder.DropTable(
-                name: "ServiceRequests");
+                name: "ServiceRequests",
+                schema: "glms");
 
             migrationBuilder.DropTable(
-                name: "Contracts");
+                name: "Contracts",
+                schema: "glms");
 
             migrationBuilder.DropTable(
-                name: "Clients");
+                name: "Clients",
+                schema: "glms");
         }
     }
 }

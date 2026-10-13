@@ -18,6 +18,9 @@ namespace TechMove.GLMS.Web.Data
         {
             base.OnModelCreating(modelBuilder);
 
+            // Isolate GLMS tables into dedicated schema so they coexist safely in shared Azure database
+            modelBuilder.HasDefaultSchema("glms");
+
             // ==========================================
             // Client Configuration
             // ==========================================
