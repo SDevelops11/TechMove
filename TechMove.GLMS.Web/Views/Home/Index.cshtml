@@ -1,0 +1,229 @@
+@model TechMove.GLMS.Web.ViewModels.DashboardViewModel
+@{
+    ViewData["Title"] = "Executive Logistics Dashboard";
+}
+
+<div class="row align-items-center mb-4">
+    <div class="col-md-7">
+        <h2 class="fw-bold text-dark mb-1">
+            <i class="fa-solid fa-gauge-high text-primary me-2"></i>Executive Logistics Dashboard
+        </h2>
+        <p class="text-muted mb-0">
+            Real-time monitoring of legal agreements, freight dispatch workflows, and international currency conversions.
+        </p>
+    </div>
+    <div class="col-md-5 text-md-end mt-3 mt-md-0 d-flex gap-2 justify-content-md-end">
+        <a asp-controller="Contracts" asp-action="Create" class="btn btn-glms-primary">
+            <i class="fa-solid fa-plus me-1"></i> New Contract
+        </a>
+        <a asp-controller="ServiceRequests" asp-action="Create" class="btn btn-glms-success">
+            <i class="fa-solid fa-bolt me-1"></i> Raise Request
+        </a>
+    </div>
+</div>
+
+<!-- Key Performance Indicators (KPIs) -->
+<div class="row g-3 mb-4">
+    <div class="col-xl-3 col-sm-6">
+        <div class="kpi-card kpi-primary">
+            <div class="d-flex justify-content-between align-items-start">
+                <div>
+                    <div class="kpi-title">Total Contracts</div>
+                    <div class="kpi-value">@Model.TotalContracts</div>
+                    <div class="kpi-subtext"><i class="fa-solid fa-file-contract text-primary me-1"></i>Repository Total</div>
+                </div>
+                <div class="kpi-icon" style="background: rgba(2, 132, 199, 0.1); color: #0284c7;">
+                    <i class="fa-solid fa-folder-open"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-sm-6">
+        <div class="kpi-card kpi-success">
+            <div class="d-flex justify-content-between align-items-start">
+                <div>
+                    <div class="kpi-title">Active SLAs</div>
+                    <div class="kpi-value text-success">@Model.ActiveContracts</div>
+                    <div class="kpi-subtext"><i class="fa-solid fa-circle-check text-success me-1"></i>Ready for Requests</div>
+                </div>
+                <div class="kpi-icon" style="background: rgba(16, 185, 129, 0.1); color: #10b981;">
+                    <i class="fa-solid fa-circle-check"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-sm-6">
+        <div class="kpi-card kpi-warning">
+            <div class="d-flex justify-content-between align-items-start">
+                <div>
+                    <div class="kpi-title">On Hold / Draft</div>
+                    <div class="kpi-value text-warning">@(Model.OnHoldContracts + Model.DraftContracts)</div>
+                    <div class="kpi-subtext"><i class="fa-solid fa-pause text-warning me-1"></i>Requests Restricted</div>
+                </div>
+                <div class="kpi-icon" style="background: rgba(245, 158, 11, 0.1); color: #f59e0b;">
+                    <i class="fa-solid fa-hand"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-sm-6">
+        <div class="kpi-card kpi-danger">
+            <div class="d-flex justify-content-between align-items-start">
+                <div>
+                    <div class="kpi-title">Expired Agreements</div>
+                    <div class="kpi-value text-danger">@Model.ExpiredContracts</div>
+                    <div class="kpi-subtext"><i class="fa-solid fa-ban text-danger me-1"></i>Requests Blocked</div>
+                </div>
+                <div class="kpi-icon" style="background: rgba(239, 68, 68, 0.1); color: #ef4444;">
+                    <i class="fa-solid fa-calendar-xmark"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Financial Integration Banner & Live Currency Widget -->
+<div class="card border-0 shadow-sm mb-4" style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); border-radius: 16px; color: #fff;">
+    <div class="card-body p-4">
+        <div class="row align-items-center">
+            <div class="col-lg-8">
+                <span class="badge bg-info text-dark mb-2 px-3 py-1 fw-bold">
+                    <i class="fa-solid fa-globe me-1"></i> Live External Currency API (ExchangeRate-API)
+                </span>
+                <h4 class="fw-bold mb-1">Financial Reconciliation Engine</h4>
+                <p class="text-white-50 mb-0">
+                    TechMove coordinates international multimodal shipments quoted in USD, EUR, and GBP, dynamically calculated and settled in South African Rand (ZAR) via asynchronous HTTP client requests.
+                </p>
+            </div>
+            <div class="col-lg-4 text-lg-end mt-3 mt-lg-0">
+                <div class="p-3 rounded-3" style="background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.15);">
+                    <small class="text-white-50 text-uppercase d-block fw-bold" style="font-size: 0.72rem;">Live Benchmark Spot Rate</small>
+                    <div class="fw-bold fs-3 text-info font-monospace my-1">
+                        1 USD = R @Model.CurrentUsdZarRate.ToString("F4") ZAR
+                    </div>
+                    <small class="text-success"><i class="fa-solid fa-bolt me-1"></i>Auto-refreshed via HttpClient</small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Tables Row -->
+<div class="row g-4">
+    <!-- Recent Contracts -->
+    <div class="col-lg-7">
+        <div class="glass-panel h-100">
+            <div class="glass-panel-header">
+                <div>
+                    <h5 class="fw-bold mb-0">Recent Freight Contracts</h5>
+                    <small class="text-muted">Managed agreements and legal documents</small>
+                </div>
+                <a asp-controller="Contracts" asp-action="Index" class="btn btn-sm btn-outline-primary">
+                    View All <i class="fa-solid fa-arrow-right ms-1"></i>
+                </a>
+            </div>
+
+            <div class="table-responsive">
+                <table class="table table-hover table-glms">
+                    <thead>
+                        <tr>
+                            <th>Contract #</th>
+                            <th>Client</th>
+                            <th>Tier</th>
+                            <th>Status</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var c in Model.RecentContracts)
+                        {
+                            <tr>
+                                <td>
+                                    <strong class="text-dark">@c.ContractNumber</strong>
+                                    <div class="small text-muted text-truncate" style="max-width: 170px;">@c.Title</div>
+                                </td>
+                                <td>
+                                    <div class="fw-semibold">@(c.Client?.Name ?? "N/A")</div>
+                                    <small class="text-muted">@(c.Client?.Region ?? "Global")</small>
+                                </td>
+                                <td>
+                                    <span class="badge-service-level">@c.ServiceLevel</span>
+                                </td>
+                                <td>
+                                    @switch (c.Status)
+                                    {
+                                        case TechMove.GLMS.Web.Models.ContractStatus.Active:
+                                            <span class="badge-status badge-status-active"><i class="fa-solid fa-circle" style="font-size:6px;"></i> Active</span>
+                                            break;
+                                        case TechMove.GLMS.Web.Models.ContractStatus.Draft:
+                                            <span class="badge-status badge-status-draft"><i class="fa-solid fa-circle" style="font-size:6px;"></i> Draft</span>
+                                            break;
+                                        case TechMove.GLMS.Web.Models.ContractStatus.OnHold:
+                                            <span class="badge-status badge-status-onhold"><i class="fa-solid fa-circle" style="font-size:6px;"></i> On Hold</span>
+                                            break;
+                                        case TechMove.GLMS.Web.Models.ContractStatus.Expired:
+                                            <span class="badge-status badge-status-expired"><i class="fa-solid fa-circle" style="font-size:6px;"></i> Expired</span>
+                                            break;
+                                    }
+                                </td>
+                                <td>
+                                    <a asp-controller="Contracts" asp-action="Details" asp-route-id="@c.Id" class="btn btn-sm btn-light border" title="View Contract Details">
+                                        <i class="fa-solid fa-eye text-primary"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Service Requests -->
+    <div class="col-lg-5">
+        <div class="glass-panel h-100">
+            <div class="glass-panel-header">
+                <div>
+                    <h5 class="fw-bold mb-0">Active Service Dispatches</h5>
+                    <small class="text-muted">Operational transport requests</small>
+                </div>
+                <a asp-controller="ServiceRequests" asp-action="Index" class="btn btn-sm btn-outline-success">
+                    View All <i class="fa-solid fa-arrow-right ms-1"></i>
+                </a>
+            </div>
+
+            <div class="table-responsive">
+                <table class="table table-hover table-glms">
+                    <thead>
+                        <tr>
+                            <th>Request #</th>
+                            <th>Foreign / ZAR</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var r in Model.RecentServiceRequests)
+                        {
+                            <tr>
+                                <td>
+                                    <strong class="text-dark">@r.RequestNumber</strong>
+                                    <div class="small text-muted text-truncate" style="max-width: 150px;">@r.Description</div>
+                                </td>
+                                <td>
+                                    <div class="small text-muted">@r.OriginalCostUsd.ToString("N2") @r.OriginalCurrency</div>
+                                    <strong class="text-success font-monospace">R @r.Cost.ToString("N2")</strong>
+                                </td>
+                                <td>
+                                    <span class="badge bg-secondary">@r.Status</span>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>

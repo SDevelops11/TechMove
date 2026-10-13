@@ -1,0 +1,211 @@
+@model TechMove.GLMS.Web.ViewModels.CreateServiceRequestViewModel
+@{
+    ViewData["Title"] = "Raise Service Request (Strategy Pattern & Live Currency API)";
+}
+
+<div class="row justify-content-center">
+    <div class="col-lg-9">
+        <div class="d-flex align-items-center justify-content-between mb-4">
+            <div>
+                <a asp-action="Index" class="btn btn-sm btn-outline-secondary mb-2">
+                    <i class="fa-solid fa-arrow-left me-1"></i> Back to Service Requests
+                </a>
+                <h2 class="fw-bold text-dark mb-0">
+                    <i class="fa-solid fa-truck-ramp-box text-success me-2"></i>Raise Operational Service Request
+                </h2>
+                <small class="text-muted">Enforces Contract Lifecycle Validation & Live Currency API (USD &rarr; ZAR Conversion)</small>
+            </div>
+            <div>
+                <span class="badge bg-success px-3 py-2">
+                    <i class="fa-solid fa-coins me-1"></i> Strategy Pattern & Live FX
+                </span>
+            </div>
+        </div>
+
+        <div class="card border-0 shadow-sm" style="border-radius: 16px;">
+            <div class="card-body p-4 p-md-5">
+                <form asp-action="Create" method="post" id="createServiceRequestForm">
+                    <div asp-validation-summary="ModelOnly" class="alert alert-danger mb-4" role="alert"></div>
+
+                    <!-- Workflow Policy Banner -->
+                    <div class="alert alert-warning d-flex align-items-center mb-4" style="border-radius: 12px; background-color: #fffbeb; border: 1px solid #fde68a;">
+                        <i class="fa-solid fa-triangle-exclamation fa-2x me-3 text-warning"></i>
+                        <div class="small">
+                            <strong class="text-dark">Strict Workflow Business Rule:</strong>
+                            <div class="text-secondary">
+                                As specified in the POE requirements, a Service Request <strong>CANNOT</strong> be created if the parent Contract is set to <strong>"Expired"</strong> or <strong>"On Hold"</strong>. The contract must be in <strong>"Active"</strong> status.
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <label asp-for="ContractId" class="form-label fw-bold"></label>
+                            <select asp-for="ContractId" asp-items="Model.ContractsList" class="form-select" id="contractSelect" required>
+                                <option value="">-- Choose Contract --</option>
+                            </select>
+                            <span asp-validation-for="ContractId" class="text-danger small"></span>
+                            <div id="contractWarningNotice" class="text-danger small fw-semibold mt-1 d-none"></div>
+                        </div>
+
+                        <div class="col-12">
+                            <label asp-for="Description" class="form-label fw-bold"></label>
+                            <input asp-for="Description" class="form-control" placeholder="e.g., Refrigerated 40ft container linehaul from Durban Pier to Johannesburg hub" required />
+                            <span asp-validation-for="Description" class="text-danger small"></span>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label asp-for="Origin" class="form-label fw-bold"></label>
+                            <input asp-for="Origin" class="form-control" placeholder="e.g., Port of Durban, South Africa" />
+                            <span asp-validation-for="Origin" class="text-danger small"></span>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label asp-for="Destination" class="form-label fw-bold"></label>
+                            <input asp-for="Destination" class="form-control" placeholder="e.g., City Deep Terminal, Johannesburg" />
+                            <span asp-validation-for="Destination" class="text-danger small"></span>
+                        </div>
+                    </div>
+
+                    <!-- Interactive Live Currency Conversion Engine Widget -->
+                    <div class="currency-calc-box mt-4 mb-4">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <div>
+                                <span class="badge bg-primary text-white text-uppercase" style="font-size:0.7rem; letter-spacing:0.05em;">
+                                    <i class="fa-solid fa-arrows-split-up-and-left me-1"></i> Strategy Pattern Algorithm
+                                </span>
+                                <h5 class="fw-bold text-white mb-0 mt-1">Live Multi-Currency FX Engine</h5>
+                            </div>
+                            <div id="strategyIndicator" class="badge bg-dark border border-secondary text-info font-monospace">
+                                Active: UsdToZarConverter
+                            </div>
+                        </div>
+
+                        <div class="row g-3 align-items-center">
+                            <div class="col-md-4">
+                                <label asp-for="Currency" class="form-label text-white-50 small fw-bold text-uppercase"></label>
+                                <select asp-for="Currency" class="form-select bg-dark text-white border-secondary" id="currencySelect">
+                                    <option value="USD" selected>USD - United States Dollar</option>
+                                    <option value="EUR">EUR - Euro</option>
+                                    <option value="GBP">GBP - British Pound Sterling</option>
+                                </select>
+                                <span asp-validation-for="Currency" class="text-danger small"></span>
+                            </div>
+
+                            <div class="col-md-4">
+                                <label asp-for="Amount" class="form-label text-white-50 small fw-bold text-uppercase"></label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-secondary text-white border-secondary" id="currencySymbol">$</span>
+                                    <input asp-for="Amount" class="form-control bg-dark text-white border-secondary font-monospace fs-5" id="amountInput" type="number" step="0.01" min="0.01" required />
+                                </div>
+                                <span asp-validation-for="Amount" class="text-danger small"></span>
+                            </div>
+
+                            <div class="col-md-4 text-center text-md-end">
+                                <small class="text-white-50 text-uppercase fw-bold d-block" style="font-size:0.72rem;">Auto-Calculated Settled Cost</small>
+                                <div class="zar-result-display" id="zarDisplay">
+                                    R @Model.PreviewZarCost.ToString("N2")
+                                </div>
+                                <div class="rate-badge mt-1" id="rateDisplay">
+                                    Spot Rate: 1 USD = R @Model.CurrentExchangeRate.ToString("F4") ZAR
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mt-3 pt-2 border-top border-secondary text-white-50 small d-flex justify-content-between align-items-center">
+                            <span><i class="fa-solid fa-satellite text-info me-1"></i> Consumes: <strong>ExchangeRate-API</strong> (cached 60m with resilient fallback)</span>
+                            <span id="calcStatus" class="text-success"><i class="fa-solid fa-check-circle me-1"></i> Live Synced</span>
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-end gap-2 pt-3 border-top">
+                        <a asp-action="Index" class="btn btn-outline-secondary px-4">Cancel</a>
+                        <button type="submit" class="btn btn-glms-success px-5" id="submitBtn">
+                            <i class="fa-solid fa-check me-1"></i> Dispatch Service Request
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        const amountInput = document.getElementById('amountInput');
+        const currencySelect = document.getElementById('currencySelect');
+        const currencySymbol = document.getElementById('currencySymbol');
+        const zarDisplay = document.getElementById('zarDisplay');
+        const rateDisplay = document.getElementById('rateDisplay');
+        const strategyIndicator = document.getElementById('strategyIndicator');
+        const calcStatus = document.getElementById('calcStatus');
+        const contractSelect = document.getElementById('contractSelect');
+        const contractWarningNotice = document.getElementById('contractWarningNotice');
+        const submitBtn = document.getElementById('submitBtn');
+
+        let debounceTimer = null;
+
+        function updateSymbol(curr) {
+            switch (curr) {
+                case 'USD': currencySymbol.textContent = '$'; break;
+                case 'EUR': currencySymbol.textContent = '€'; break;
+                case 'GBP': currencySymbol.textContent = '£'; break;
+                default: currencySymbol.textContent = '$';
+            }
+        }
+
+        async function fetchLiveConversion() {
+            const amount = parseFloat(amountInput.value);
+            const currency = currencySelect.value;
+            updateSymbol(currency);
+
+            if (isNaN(amount) || amount <= 0) {
+                zarDisplay.textContent = 'R 0.00';
+                return;
+            }
+
+            calcStatus.innerHTML = '<i class="fa-solid fa-spinner fa-spin me-1"></i> Fetching live rate...';
+
+            try {
+                const response = await fetch(`/ServiceRequests/ConvertCurrency?amount=${encodeURIComponent(amount)}&currency=${encodeURIComponent(currency)}`);
+                const data = await response.json();
+
+                if (data.success) {
+                    zarDisplay.textContent = 'R ' + Number(data.convertedZar).toLocaleString('en-ZA', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                    rateDisplay.textContent = `Spot Rate: 1 ${data.currency} = R ${Number(data.rate).toFixed(4)} ZAR`;
+                    strategyIndicator.textContent = `Active: ${data.strategy}`;
+                    calcStatus.innerHTML = '<i class="fa-solid fa-check-circle me-1 text-success"></i> Converted Live via HttpClient';
+                } else {
+                    calcStatus.innerHTML = '<i class="fa-solid fa-triangle-exclamation me-1 text-warning"></i> Fallback Rate Applied';
+                }
+            } catch (err) {
+                console.error('Error fetching currency rate:', err);
+                calcStatus.innerHTML = '<i class="fa-solid fa-triangle-exclamation me-1 text-warning"></i> Rate Offline Fallback';
+            }
+        }
+
+        amountInput.addEventListener('input', () => {
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(fetchLiveConversion, 300);
+        });
+
+        currencySelect.addEventListener('change', fetchLiveConversion);
+
+        // Contract status client-side verification
+        function validateSelectedContract() {
+            const selectedText = contractSelect.options[contractSelect.selectedIndex]?.text || '';
+            contractWarningNotice.classList.add('d-none');
+            submitBtn.disabled = false;
+
+            if (selectedText.includes('(Expired)') || selectedText.includes('(OnHold)') || selectedText.includes('(On Hold)')) {
+                contractWarningNotice.textContent = 'Validation Notice: The selected contract is Expired or On Hold. Service Requests cannot be submitted for this contract.';
+                contractWarningNotice.classList.remove('d-none');
+                submitBtn.disabled = true;
+            }
+        }
+
+        contractSelect.addEventListener('change', validateSelectedContract);
+        validateSelectedContract();
+    </script>
+}

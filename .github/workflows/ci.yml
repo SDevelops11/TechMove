@@ -1,0 +1,30 @@
+name: TechMove GLMS CI Pipeline
+
+on:
+  push:
+    branches: [ "main", "master" ]
+  pull_request:
+    branches: [ "main", "master" ]
+
+jobs:
+  build-and-test:
+    name: Build & Run Automated Unit Tests
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Code Repository
+      uses: actions/checkout@v4
+
+    - name: Setup .NET 8 SDK
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '8.0.x'
+
+    - name: Restore NuGet Dependencies
+      run: dotnet restore TechMove.sln
+
+    - name: Build Solution (Release)
+      run: dotnet build TechMove.sln --configuration Release --no-restore
+
+    - name: Execute Automated Unit & Business Logic Tests
+      run: dotnet test TechMove.sln --configuration Release --no-build --verbosity normal --logger "trx;LogFileName=test_results.trx"

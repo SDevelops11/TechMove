@@ -1,0 +1,191 @@
+@model TechMove.GLMS.Web.ViewModels.ContractIndexViewModel
+@{
+    ViewData["Title"] = "Contracts Management Hub";
+}
+
+<div class="row align-items-center mb-4">
+    <div class="col-md-8">
+        <h2 class="fw-bold text-dark mb-1">
+            <i class="fa-solid fa-file-contract text-primary me-2"></i>Contract Management Hub
+        </h2>
+        <p class="text-muted mb-0">
+            Central repository for legal agreements, client SLAs, document archiving, and automated lifecycle tracking.
+        </p>
+    </div>
+    <div class="col-md-4 text-md-end mt-3 mt-md-0">
+        <a asp-action="Create" class="btn btn-glms-primary">
+            <i class="fa-solid fa-plus me-1"></i> New Contract (Factory Pattern)
+        </a>
+    </div>
+</div>
+
+<!-- Search & LINQ Filter Card -->
+<div class="card border-0 shadow-sm mb-4" style="border-radius: 14px; background: #ffffff;">
+    <div class="card-body p-4">
+        <div class="d-flex align-items-center justify-content-between mb-3 border-bottom pb-2">
+            <h6 class="fw-bold mb-0 text-dark">
+                <i class="fa-solid fa-filter text-primary me-2"></i>LINQ Multi-Criteria Search & Filter
+            </h6>
+            <small class="badge bg-light text-muted border">LINQ Expression Trees</small>
+        </div>
+
+        <form method="get" asp-action="Index">
+            <div class="row g-3">
+                <div class="col-md-3">
+                    <label asp-for="StartDate" class="form-label small fw-semibold text-muted"></label>
+                    <input asp-for="StartDate" type="date" class="form-control form-control-sm" />
+                </div>
+                <div class="col-md-3">
+                    <label asp-for="EndDate" class="form-label small fw-semibold text-muted"></label>
+                    <input asp-for="EndDate" type="date" class="form-control form-control-sm" />
+                </div>
+                <div class="col-md-2">
+                    <label asp-for="Status" class="form-label small fw-semibold text-muted"></label>
+                    <select asp-for="Status" asp-items="Html.GetEnumSelectList<TechMove.GLMS.Web.Models.ContractStatus>()" class="form-select form-select-sm">
+                        <option value="">-- All Statuses --</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label asp-for="ClientId" class="form-label small fw-semibold text-muted"></label>
+                    <select asp-for="ClientId" asp-items="Model.ClientsList" class="form-select form-select-sm">
+                        <option value="">-- All Clients --</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label asp-for="SearchTerm" class="form-label small fw-semibold text-muted"></label>
+                    <input asp-for="SearchTerm" class="form-control form-control-sm" placeholder="Ref # / Title..." />
+                </div>
+            </div>
+
+            <div class="d-flex justify-content-end gap-2 mt-3 pt-2">
+                <a asp-action="Index" class="btn btn-sm btn-outline-secondary px-3">
+                    <i class="fa-solid fa-rotate-left me-1"></i> Reset
+                </a>
+                <button type="submit" class="btn btn-sm btn-glms-primary px-4">
+                    <i class="fa-solid fa-magnifying-glass me-1"></i> Apply Filter
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Results Table -->
+<div class="glass-panel">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+            <h5 class="fw-bold mb-0">Contracts Repository</h5>
+            <small class="text-muted">Showing @Model.Contracts.Count registered agreement(s)</small>
+        </div>
+        <div>
+            <span class="badge bg-success-subtle text-success border border-success-subtle px-3 py-2">
+                <i class="fa-solid fa-database me-1"></i> SQL Server / EF Core Active
+            </span>
+        </div>
+    </div>
+
+    @if (!Model.Contracts.Any())
+    {
+        <div class="text-center py-5">
+            <div class="display-6 text-muted mb-3"><i class="fa-solid fa-box-open"></i></div>
+            <h5 class="fw-bold text-dark">No contracts found</h5>
+            <p class="text-muted">Try adjusting your LINQ filter criteria or create a new contract.</p>
+            <a asp-action="Create" class="btn btn-glms-primary btn-sm mt-2">
+                <i class="fa-solid fa-plus me-1"></i> Create Contract
+            </a>
+        </div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table table-hover table-glms">
+                <thead>
+                    <tr>
+                        <th>Contract #</th>
+                        <th>Client & Region</th>
+                        <th>Dates (Start - End)</th>
+                        <th>Type / SLA</th>
+                        <th>Est. Value (ZAR)</th>
+                        <th>Signed PDF</th>
+                        <th>Status</th>
+                        <th class="text-end">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var c in Model.Contracts)
+                    {
+                        <tr>
+                            <td>
+                                <strong class="text-dark font-monospace">@c.ContractNumber</strong>
+                                <div class="text-muted small text-truncate" style="max-width: 180px;">@c.Title</div>
+                            </td>
+                            <td>
+                                <div class="fw-semibold">@(c.Client?.Name ?? "Unassigned")</div>
+                                <small class="text-muted"><i class="fa-solid fa-location-dot me-1 text-primary"></i>@(c.Client?.Region ?? "Global")</small>
+                            </td>
+                            <td>
+                                <div class="small">
+                                    <span class="text-success"><i class="fa-regular fa-calendar-check me-1"></i>@c.StartDate.ToString("dd MMM yyyy")</span>
+                                    <br />
+                                    <span class="text-danger"><i class="fa-regular fa-calendar-xmark me-1"></i>@c.EndDate.ToString("dd MMM yyyy")</span>
+                                </div>
+                            </td>
+                            <td>
+                                <span class="badge-service-level">@c.ServiceLevel</span>
+                                <div class="small text-muted mt-1">@c.ContractType Tier</div>
+                            </td>
+                            <td>
+                                <strong class="text-dark font-monospace">R @c.EstimatedValueZar.ToString("N2")</strong>
+                                <div class="small text-muted">($@c.EstimatedValueUsd.ToString("N2") USD)</div>
+                            </td>
+                            <td>
+                                @if (!string.IsNullOrWhiteSpace(c.AgreementFilePath))
+                                {
+                                    <a asp-action="DownloadAgreement" asp-route-id="@c.Id" class="btn btn-sm btn-outline-danger" title="Download Signed PDF Document">
+                                        <i class="fa-solid fa-file-pdf me-1"></i> PDF
+                                    </a>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-light text-muted border">No PDF</span>
+                                }
+                            </td>
+                            <td>
+                                @switch (c.Status)
+                                {
+                                    case TechMove.GLMS.Web.Models.ContractStatus.Active:
+                                        <span class="badge-status badge-status-active"><i class="fa-solid fa-circle" style="font-size:6px;"></i> Active</span>
+                                        break;
+                                    case TechMove.GLMS.Web.Models.ContractStatus.Draft:
+                                        <span class="badge-status badge-status-draft"><i class="fa-solid fa-circle" style="font-size:6px;"></i> Draft</span>
+                                        break;
+                                    case TechMove.GLMS.Web.Models.ContractStatus.OnHold:
+                                        <span class="badge-status badge-status-onhold"><i class="fa-solid fa-circle" style="font-size:6px;"></i> On Hold</span>
+                                        break;
+                                    case TechMove.GLMS.Web.Models.ContractStatus.Expired:
+                                        <span class="badge-status badge-status-expired"><i class="fa-solid fa-circle" style="font-size:6px;"></i> Expired</span>
+                                        break;
+                                }
+                            </td>
+                            <td class="text-end">
+                                <div class="btn-group" role="group">
+                                    <a asp-action="Details" asp-route-id="@c.Id" class="btn btn-sm btn-outline-secondary" title="View Full Contract & Audit Log">
+                                        <i class="fa-solid fa-eye"></i>
+                                    </a>
+                                    <a asp-action="ChangeStatus" asp-route-id="@c.Id" class="btn btn-sm btn-outline-primary" title="Change Status (Observer Pattern)">
+                                        <i class="fa-solid fa-arrows-rotate"></i>
+                                    </a>
+                                    @if (c.Status == TechMove.GLMS.Web.Models.ContractStatus.Active)
+                                    {
+                                        <a asp-controller="ServiceRequests" asp-action="Create" asp-route-contractId="@c.Id" class="btn btn-sm btn-success" title="Raise Service Request">
+                                            <i class="fa-solid fa-plus"></i>
+                                        </a>
+                                    }
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</div>

@@ -1,0 +1,123 @@
+@model List<TechMove.GLMS.Web.Models.ServiceRequest>
+@{
+    ViewData["Title"] = "Service Requests Dispatch Hub";
+}
+
+<div class="d-flex align-items-center justify-content-between mb-4">
+    <div>
+        <h2 class="fw-bold text-dark mb-1">
+            <i class="fa-solid fa-boxes-packing text-primary me-2"></i>Service Requests Processing
+        </h2>
+        <p class="text-muted mb-0">
+            Operational transit requests validated against active agreements with automatic foreign exchange calculation.
+        </p>
+    </div>
+    <div>
+        <a asp-action="Create" class="btn btn-glms-success">
+            <i class="fa-solid fa-bolt me-1"></i> Raise Service Request (Live FX API)
+        </a>
+    </div>
+</div>
+
+<div class="glass-panel">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+            <h5 class="fw-bold mb-0">Dispatched Transport Requests</h5>
+            <small class="text-muted">Total: @Model.Count request(s) on record</small>
+        </div>
+        <div>
+            <span class="badge bg-info-subtle text-info-emphasis border px-3 py-2">
+                <i class="fa-solid fa-calculator me-1"></i> Strategy Pattern & Live FX Converted
+            </span>
+        </div>
+    </div>
+
+    @if (!Model.Any())
+    {
+        <div class="text-center py-5">
+            <div class="display-6 text-muted mb-3"><i class="fa-solid fa-box-open"></i></div>
+            <h5 class="fw-bold text-dark">No service requests yet</h5>
+            <p class="text-muted">Raise an operational request under any active client contract.</p>
+            <a asp-action="Create" class="btn btn-glms-success btn-sm mt-2">
+                <i class="fa-solid fa-plus me-1"></i> Raise Service Request
+            </a>
+        </div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table table-hover table-glms">
+                <thead>
+                    <tr>
+                        <th>Request #</th>
+                        <th>Parent Contract</th>
+                        <th>Description & Route</th>
+                        <th>Quoted Currency</th>
+                        <th>Exchange Rate</th>
+                        <th>Settled Cost (ZAR)</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var sr in Model)
+                    {
+                        <tr>
+                            <td>
+                                <strong class="text-dark font-monospace">@sr.RequestNumber</strong>
+                                <div class="small text-muted">@sr.CreatedDate.ToString("dd MMM yyyy HH:mm")</div>
+                            </td>
+                            <td>
+                                @if (sr.Contract != null)
+                                {
+                                    <a asp-controller="Contracts" asp-action="Details" asp-route-id="@sr.Contract.Id" class="fw-semibold text-primary text-decoration-none font-monospace">
+                                        @sr.Contract.ContractNumber
+                                    </a>
+                                    <div class="small text-muted text-truncate" style="max-width: 160px;">@(sr.Contract.Client?.Name ?? "Client")</div>
+                                }
+                                else
+                                {
+                                    <span class="text-muted">Contract #@sr.ContractId</span>
+                                }
+                            </td>
+                            <td>
+                                <strong class="text-dark">@sr.Description</strong>
+                                @if (!string.IsNullOrWhiteSpace(sr.Origin) || !string.IsNullOrWhiteSpace(sr.Destination))
+                                {
+                                    <div class="small text-muted">
+                                        <i class="fa-solid fa-route me-1 text-primary"></i>@sr.Origin &rarr; @sr.Destination
+                                    </div>
+                                }
+                            </td>
+                            <td>
+                                <strong class="text-dark font-monospace">@sr.OriginalCostUsd.ToString("N2") @sr.OriginalCurrency</strong>
+                            </td>
+                            <td>
+                                <span class="rate-badge">1 @sr.OriginalCurrency = R @sr.ExchangeRateUsed.ToString("F4")</span>
+                            </td>
+                            <td>
+                                <strong class="text-success fs-6 font-monospace">R @sr.Cost.ToString("N2")</strong>
+                            </td>
+                            <td>
+                                @switch (sr.Status)
+                                {
+                                    case TechMove.GLMS.Web.Models.ServiceRequestStatus.Completed:
+                                        <span class="badge bg-success">Completed</span>
+                                        break;
+                                    case TechMove.GLMS.Web.Models.ServiceRequestStatus.InProgress:
+                                        <span class="badge bg-primary">In Progress</span>
+                                        break;
+                                    case TechMove.GLMS.Web.Models.ServiceRequestStatus.Pending:
+                                        <span class="badge bg-warning text-dark">Pending</span>
+                                        break;
+                                    case TechMove.GLMS.Web.Models.ServiceRequestStatus.Cancelled:
+                                        <span class="badge bg-danger">Cancelled</span>
+                                        break;
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</div>
