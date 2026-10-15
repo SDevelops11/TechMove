@@ -10,12 +10,12 @@
 
 ---
 
-## 🚚 Overview
+## Overview
 TechMove Logistics GLMS is an enterprise-grade platform designed to coordinate global freight agreements, multimodal haulage schedules, and service invoices. This Part 2 deliverable implements the core **ASP.NET Core 8.0 MVC Monolith** prototype with Entity Framework Core, translating the three Gang of Four (GoF) design patterns established in Part 1 into working C# code.
 
 ---
 
-## 🛠️ Key Architectural Implementations
+## Key Architectural Implementations
 1. **Database & EF Core Architecture**:
    - Normalized schema (`Clients`, `Contracts`, `ServiceRequests`, `ContractStatusLogs`).
    - Fluent API configuration with key constraints, unique indexes, and referential integrity (`DeleteBehavior.Restrict`).
@@ -41,7 +41,7 @@ TechMove Logistics GLMS is an enterprise-grade platform designed to coordinate g
 
 ---
 
-## 🚀 Quick Start
+## Quick Start
 
 ### Build & Run Web Application
 ```powershell
@@ -53,5 +53,3 @@ Navigate to `https://localhost:7085` in your web browser.
 ```powershell
 dotnet test TechMove.sln --logger "console;verbosity=detailed"
 ```
-
-For complete marking rubric breakdown and video presentation guide, see [PART_2_DOCUMENTATION.md](file:///c:/Users/Sahir/Desktop/Stuff/_Rosebank%20College/EAPD7111/TechMove/PART_2_DOCUMENTATION.md).
