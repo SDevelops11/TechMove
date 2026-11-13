@@ -5,7 +5,6 @@
 [![ASP.NET Core Web API](https://img.shields.io/badge/ASP.NET%20Core-8.0%20Web%20API-blue.svg)](TechMove.GLMS.API)
 [![ASP.NET Core MVC](https://img.shields.io/badge/Frontend-ASP.NET%20Core%208.0%20MVC-512bd4.svg)](TechMove.GLMS.Web)
 [![Docker](https://img.shields.io/badge/Docker-Multi--Container%20Compose-2496ed.svg)](docker-compose.yml)
-[![Swagger](https://img.shields.io/badge/OpenAPI-Swagger%20v1%20%2B%20JWT-85ea2d.svg)](http://localhost:5000/swagger)
 
 **Module:** Enterprise Application Development (EAPD7111 / PROG7311)  
 **Student:** Sahir Madurai (ST10544483)  
