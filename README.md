@@ -8,12 +8,11 @@
 
 **Module:** Enterprise Application Development (EAPD7111 / PROG7311)  
 **Student:** Sahir Madurai (ST10544483)  
-**Assessment:** Final Portfolio of Evidence (PoE) — Part 3 (Modernisation, Docker & Automated Integration Testing)  
-**Mark Target:** 100 / 100 (Greatly Exceeds All Rubric Standards)
+**Assessment:** Final Portfolio of Evidence (PoE)
 
 ---
 
-## 1. Architectural Overview & Part 3 Modernisation
+## 1. Architectural Overview
 
 TechMove Logistics is an international freight coordinator handling complex maritime, rail, and multimodal shipping agreements. In Part 3, the monolithic application was successfully decoupled into a **Service-Oriented Architecture (SOA)**, containerized for cloud-native deployment with **Docker & Docker Compose**, and fortified with an enterprise **62-test automated unit and integration suite**.
 
@@ -45,9 +44,7 @@ TechMove Logistics is an international freight coordinator handling complex mari
 
 ---
 
-## 2. Key Part 3 Implementations Aligned to Rubric
-
-### 1. Web API Construction (The Backend) — 15 Marks
+### 1. Web API Construction (The Backend)
 - **Dedicated Project:** `TechMove.GLMS.API` talks directly to the database; MVC controllers no longer contain database access logic.
 - **REST Endpoints & Verbs:**
   - `GET /api/contracts` (with LINQ filtering: date range, status, client, keyword).
@@ -62,19 +59,19 @@ TechMove Logistics is an international freight coordinator handling complex mari
   - `POST /api/auth/login` (issues cryptographic JWT Bearer access tokens).
 - **Self-Documenting API:** Swagger / OpenAPI is enabled across all environments (`http://localhost:5000/swagger`) with interactive JWT Bearer authorization support.
 
-### 2. Architectural Integrity & GoF Patterns — 15 Marks
+### 2. Architectural Integrity & GoF Patterns
 - **Factory Pattern (`Factories/`):** Instantiates `StandardContract`, `PremiumContract`, `InternationalContract`, or `ExpressContract` with dedicated SLA terms and value multipliers.
 - **Observer Pattern (`Observers/`):** Broadcasts contract status transitions to 4 departmental listeners (*Operations*, *Finance*, *Client Services*, *Compliance*), persisting full audit trail logs.
 - **Strategy Pattern (`Strategies/`):** Encapsulates algorithmic currency conversions (`UsdToZarConverter`, `EurToZarConverter`, `GbpToZarConverter`, `ApiBasedConverter`).
 - **Clean Separation of Concerns:** Repositories (`IContractRepository`, etc.) and Service Layers (`IContractService`, etc.) separate persistence logic from HTTP endpoints with extensive Dependency Injection.
 
-### 3. Frontend Refactoring & Decoupling — 15 Marks
+### 3. Frontend Refactoring & Decoupling
 - **Zero Database Dependency:** `TechMove.GLMS.Web` contains **no Entity Framework packages** and **no connection strings**.
 - **Typed `HttpClient` Service Layer:** `IContractApiClient`, `IServiceRequestApiClient`, `IClientApiClient`, `ICurrencyApiClient`, and `IAuthApiClient` manage all API calls, JSON serialization, and bearer token attachment.
 - **Robust Error Handling:** Seamlessly intercepts API HTTP status errors (`400 Bad Request`, `404 Not Found`, `401 Unauthorized`) and presents descriptive feedback to users via `TempData` and `ModelState`.
 - **JWT Authentication:** Dedicated `AccountController` with Login UI allowing authentication via JWT tokens, with demo accounts pre-configured for evaluation.
 
-### 4. Automated Integration Testing — 20 Marks
+### 4. Automated Integration Testing
 - **62 Total Automated Tests Passing (100% Green):**
   - **40 Unit Tests:** Covering Factory logic, Observer notifications, Strategy math, PDF magic bytes validation, and status transitions.
   - **22 API Integration Tests:** Utilizing `WebApplicationFactory<Program>` with an in-memory database.
@@ -83,23 +80,22 @@ TechMove Logistics is an international freight coordinator handling complex mari
   - Validates HTTP status codes (`200 OK`, `201 Created`, `400 Bad Request`, `401 Unauthorized`, `404 Not Found`).
   - Enforces workflow policies: **Service requests on Expired or On Hold contracts are strictly rejected with HTTP 400**.
 
-### 5. Docker Configuration & Optimization — 10 Marks
+### 5. Docker Configuration & Optimization
 - **Optimized Multi-Stage Builds:** `TechMove.GLMS.API/Dockerfile` and `TechMove.GLMS.Web/Dockerfile` feature 4 distinct stages (`base`, `build`, `publish`, `final`).
 - **Lean Runtime:** Uses `mcr.microsoft.com/dotnet/aspnet:8.0` for minimal image size and fast spin-up; compiles inside `mcr.microsoft.com/dotnet/sdk:8.0`.
 - **Correct Port Exposition:** Internal ports standardized on `8080`.
 
-### 6. Container Orchestration (Docker Compose) — 20 Marks
+### 6. Container Orchestration (Docker Compose)
 - **3-Tier Ecosystem in `docker-compose.yml`:**
   1. `sql-server-db` (SQL Server 2022 on port `1433`) with healthcheck and persistent volume `glms-sql-data`.
   2. `glms-backend-api` (ASP.NET Core Web API on port `5000:8080`) connecting to `sql-server-db` via internal Docker DNS.
   3. `glms-frontend-web` (ASP.NET Core MVC on port `5001:8080`) connecting to `glms-backend-api` via internal Docker DNS.
 - **Internal Networking:** Dedicated bridge network `glms-internal-net` ensuring container communication via service names.
 
-### 7. Technical Reflection Report — 5 Marks
+### 7. Technical Reflection Repor
 - Comprehensive academic report analyzing:
   - Why automated testing is critical in a CI/CD pipeline and how it prevents production defects.
   - How Docker containerization guarantees environmental parity across Dev, Test, and Prod, solving "it works on my machine".
-- Available in Markdown (`Documentation/Part3_Technical_Reflection_Report.md`) and compiled PDF (`Documentation/Part3_Technical_Reflection_Report.pdf`).
 
 ---
 
@@ -158,21 +154,7 @@ To test role-based authentication and JWT Bearer security:
 
 ---
 
-## 5. Submission Checklist & Deliverables
-
-- [x] **Full Source Code inside GitHub:** Solution containing `TechMove.GLMS.API`, `TechMove.GLMS.Web`, and `TechMove.GLMS.Tests`.
-- [x] **Multi-Stage Dockerfiles:** `TechMove.GLMS.API/Dockerfile` and `TechMove.GLMS.Web/Dockerfile`.
-- [x] **Container Orchestration:** `docker-compose.yml` spinning up `sql-server-db`, `glms-backend-api`, and `glms-frontend-web`.
-- [x] **Database Migration Scripts:** Provided in `Database/CreateGLMSDatabase.sql`.
-- [x] **Automated Testing Suite:** 62 tests passing (unit tests + automated integration tests with Create-then-Read verification).
-- [x] **Automated CI/CD Pipeline:** Configured in `.github/workflows/ci.yml`.
-- [x] **Technical Reflection Report (PDF):** `Documentation/Part3_Technical_Reflection_Report.pdf`.
-- [x] **Swagger UI:** Self-documenting API with interactive JWT bearer authorization at `/swagger`.
-
-
----
-
-### Option B: Run Locally via .NET 8 CLI
+## Option B: Run Locally via .NET 8 CLI
 
 #### Step 1: Start Backend Web API
 ```powershell
@@ -205,16 +187,3 @@ To test role-based authentication and JWT Bearer security:
 | **Solutions Architect (Admin)** | `admin@techmove.com` | `Admin@123` | Full system access, all contract approvals & audit trails |
 | **Logistics Lead (Manager)** | `manager@techmove.com` | `Manager@123` | Contract management, rate conversions, service dispatching |
 | **Haulage Coordinator (Operator)** | `operator@techmove.com` | `Operator@123` | Service request tracking and operational logging |
-
----
-
-## 5. Submission Checklist & Deliverables
-
-- [x] **Full Source Code inside GitHub:** Solution containing `TechMove.GLMS.API`, `TechMove.GLMS.Web`, and `TechMove.GLMS.Tests`.
-- [x] **Multi-Stage Dockerfiles:** `TechMove.GLMS.API/Dockerfile` and `TechMove.GLMS.Web/Dockerfile`.
-- [x] **Container Orchestration:** `docker-compose.yml` spinning up `sql-server-db`, `glms-backend-api`, and `glms-frontend-web`.
-- [x] **Database Migration Scripts:** Provided in `Database/CreateGLMSDatabase.sql`.
-- [x] **Automated Testing Suite:** 62 tests passing (unit tests + automated integration tests with Create-then-Read verification).
-- [x] **Automated CI/CD Pipeline:** Configured in `.github/workflows/ci.yml`.
-- [x] **Technical Reflection Report (PDF):** `Documentation/Part3_Technical_Reflection_Report.pdf`.
-- [x] **Swagger UI:** Self-documenting API with interactive JWT bearer authorization at `/swagger`.
