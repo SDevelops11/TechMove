@@ -1,33 +1,28 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using TechMove.GLMS.Web.Models;
-using TechMove.GLMS.Web.Repositories;
-using TechMove.GLMS.Web.Services;
+using TechMove.GLMS.Web.Services.ApiClients;
 using TechMove.GLMS.Web.ViewModels;
 
 namespace TechMove.GLMS.Web.Controllers
 {
     public class ContractsController : Controller
     {
-        private readonly IContractService _contractService;
-        private readonly IClientRepository _clientRepository;
-        private readonly IFileStorageService _fileStorageService;
+        private readonly IContractApiClient _contractApiClient;
+        private readonly IClientApiClient _clientApiClient;
         private readonly ILogger<ContractsController> _logger;
 
         public ContractsController(
-            IContractService contractService,
-            IClientRepository clientRepository,
-            IFileStorageService fileStorageService,
+            IContractApiClient contractApiClient,
+            IClientApiClient clientApiClient,
             ILogger<ContractsController> logger)
         {
-            _contractService = contractService;
-            _clientRepository = clientRepository;
-            _fileStorageService = fileStorageService;
+            _contractApiClient = contractApiClient;
+            _clientApiClient = clientApiClient;
             _logger = logger;
         }
 
         // GET: Contracts
-        // Demonstrates LINQ filtering by date range, status, client, and search term
         public async Task<IActionResult> Index(
             DateTime? startDate,
             DateTime? endDate,
@@ -35,48 +30,76 @@ namespace TechMove.GLMS.Web.Controllers
             int? clientId,
             string? searchTerm)
         {
-            var filteredContracts = await _contractService.SearchAndFilterContractsAsync(
-                startDate, endDate, status, clientId, searchTerm);
-
-            var clients = await _clientRepository.GetAllAsync();
-
-            var model = new ContractIndexViewModel
+            try
             {
-                StartDate = startDate,
-                EndDate = endDate,
-                Status = status,
-                ClientId = clientId,
-                SearchTerm = searchTerm,
-                Contracts = filteredContracts,
-                ClientsList = new SelectList(clients, "Id", "Name", clientId)
-            };
+                var dtos = await _contractApiClient.GetContractsAsync(startDate, endDate, status, clientId, searchTerm);
+                var contracts = dtos.Select(MapToContract).ToList();
 
-            return View(model);
+                var clients = await _clientApiClient.GetClientsAsync();
+
+                var model = new ContractIndexViewModel
+                {
+                    StartDate = startDate,
+                    EndDate = endDate,
+                    Status = status,
+                    ClientId = clientId,
+                    SearchTerm = searchTerm,
+                    Contracts = contracts,
+                    ClientsList = new SelectList(clients, "Id", "Name", clientId)
+                };
+
+                return View(model);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to load contracts from Backend Web API");
+                TempData["ErrorMessage"] = $"Backend Web API Communication Error: {ex.Message}";
+                return View(new ContractIndexViewModel());
+            }
         }
 
         // GET: Contracts/Details/5
         public async Task<IActionResult> Details(int id)
         {
-            var contract = await _contractService.GetContractDetailsAsync(id);
-            if (contract == null)
+            try
             {
-                TempData["ErrorMessage"] = "Contract not found.";
+                var dto = await _contractApiClient.GetContractByIdAsync(id);
+                if (dto == null)
+                {
+                    TempData["ErrorMessage"] = $"Contract #{id} was not found on the backend API service.";
+                    return RedirectToAction(nameof(Index));
+                }
+
+                var contract = MapToContract(dto);
+                return View(contract);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving contract details from Web API for ID {Id}", id);
+                TempData["ErrorMessage"] = $"Web API Error: {ex.Message}";
                 return RedirectToAction(nameof(Index));
             }
-
-            return View(contract);
         }
 
         // GET: Contracts/Create
         public async Task<IActionResult> Create()
         {
-            var clients = await _clientRepository.GetAllAsync();
-            var model = new CreateContractViewModel
+            try
             {
-                ClientsList = new SelectList(clients, "Id", "Name")
-            };
+                var clients = await _clientApiClient.GetClientsAsync();
+                var model = new CreateContractViewModel
+                {
+                    ClientsList = new SelectList(clients, "Id", "Name")
+                };
 
-            return View(model);
+                return View(model);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error loading client list from Web API");
+                TempData["ErrorMessage"] = "Could not communicate with Backend Web API to load client records.";
+                return View(new CreateContractViewModel());
+            }
         }
 
         // POST: Contracts/Create
@@ -91,39 +114,47 @@ namespace TechMove.GLMS.Web.Controllers
 
             if (model.AgreementPdf != null && model.AgreementPdf.Length > 0)
             {
-                if (!_fileStorageService.ValidatePdfFile(model.AgreementPdf, out var fileError))
+                var ext = Path.GetExtension(model.AgreementPdf.FileName).ToLowerInvariant();
+                if (ext != ".pdf" || model.AgreementPdf.ContentType != "application/pdf")
                 {
-                    ModelState.AddModelError(nameof(model.AgreementPdf), fileError ?? "Invalid PDF agreement file.");
+                    ModelState.AddModelError(nameof(model.AgreementPdf), "Only valid PDF agreements (.pdf) are permitted.");
                 }
             }
 
             if (!ModelState.IsValid)
             {
-                var clients = await _clientRepository.GetAllAsync();
-                model.ClientsList = new SelectList(clients, "Id", "Name", model.ClientId);
+                await PopulateClientsDropdownAsync(model);
                 return View(model);
             }
 
             try
             {
-                var contract = await _contractService.CreateContractAsync(
-                    model.ContractType,
-                    model.ClientId,
-                    model.Title,
-                    model.StartDate,
-                    model.EndDate,
-                    model.BaseValueUsd,
-                    model.AgreementPdf);
+                var request = new ApiCreateContractRequest
+                {
+                    ContractType = model.ContractType,
+                    ClientId = model.ClientId,
+                    Title = model.Title,
+                    StartDate = model.StartDate,
+                    EndDate = model.EndDate,
+                    BaseValueUsd = model.BaseValueUsd
+                };
 
-                TempData["SuccessMessage"] = $"Contract {contract.ContractNumber} created successfully via Factory Pattern!";
-                return RedirectToAction(nameof(Details), new { id = contract.Id });
+                var createdDto = await _contractApiClient.CreateContractAsync(request, model.AgreementPdf);
+                TempData["SuccessMessage"] = $"Contract {createdDto.ContractNumber} created successfully via Backend Web API (GoF Factory Pattern)!";
+                return RedirectToAction(nameof(Details), new { id = createdDto.Id });
+            }
+            catch (ApiException ex)
+            {
+                _logger.LogWarning(ex, "Web API rejected contract creation: {Message}", ex.Message);
+                ModelState.AddModelError(string.Empty, $"Web API Error ({(int)ex.StatusCode}): {ex.Message}");
+                await PopulateClientsDropdownAsync(model);
+                return View(model);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error creating contract");
-                ModelState.AddModelError(string.Empty, ex.Message);
-                var clients = await _clientRepository.GetAllAsync();
-                model.ClientsList = new SelectList(clients, "Id", "Name", model.ClientId);
+                _logger.LogError(ex, "Unexpected error communicating with Web API during contract creation");
+                ModelState.AddModelError(string.Empty, $"Communication Error: {ex.Message}");
+                await PopulateClientsDropdownAsync(model);
                 return View(model);
             }
         }
@@ -131,23 +162,32 @@ namespace TechMove.GLMS.Web.Controllers
         // GET: Contracts/ChangeStatus/5
         public async Task<IActionResult> ChangeStatus(int id)
         {
-            var contract = await _contractService.GetContractDetailsAsync(id);
-            if (contract == null)
+            try
             {
-                TempData["ErrorMessage"] = "Contract not found.";
+                var dto = await _contractApiClient.GetContractByIdAsync(id);
+                if (dto == null)
+                {
+                    TempData["ErrorMessage"] = "Contract not found.";
+                    return RedirectToAction(nameof(Index));
+                }
+
+                var model = new ChangeContractStatusViewModel
+                {
+                    ContractId = dto.Id,
+                    ContractNumber = dto.ContractNumber,
+                    ContractTitle = dto.Title,
+                    CurrentStatus = dto.Status,
+                    NewStatus = dto.Status
+                };
+
+                return View(model);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error fetching contract for status update from Web API");
+                TempData["ErrorMessage"] = $"Web API Error: {ex.Message}";
                 return RedirectToAction(nameof(Index));
             }
-
-            var model = new ChangeContractStatusViewModel
-            {
-                ContractId = contract.Id,
-                ContractNumber = contract.ContractNumber,
-                ContractTitle = contract.Title,
-                CurrentStatus = contract.Status,
-                NewStatus = contract.Status
-            };
-
-            return View(model);
         }
 
         // POST: Contracts/ChangeStatus
@@ -162,25 +202,20 @@ namespace TechMove.GLMS.Web.Controllers
 
             try
             {
-                bool success = await _contractService.UpdateContractStatusAsync(
-                    model.ContractId,
-                    model.NewStatus,
-                    model.Reason);
-
-                if (success)
-                {
-                    TempData["SuccessMessage"] = $"Contract status successfully updated to '{model.NewStatus}'. All 4 department observers were notified and logged.";
-                    return RedirectToAction(nameof(Details), new { id = model.ContractId });
-                }
-                else
-                {
-                    ModelState.AddModelError(string.Empty, "Failed to update contract status.");
-                    return View(model);
-                }
+                var updated = await _contractApiClient.UpdateStatusAsync(model.ContractId, model.NewStatus, model.Reason ?? "Status updated via web client");
+                TempData["SuccessMessage"] = $"Contract status successfully updated to '{updated.Status}' via Backend Web API (GoF Observer Pattern triggered)!";
+                return RedirectToAction(nameof(Details), new { id = model.ContractId });
+            }
+            catch (ApiException ex)
+            {
+                _logger.LogWarning(ex, "API rejected status update: {Message}", ex.Message);
+                ModelState.AddModelError(string.Empty, $"Web API Policy Rejection: {ex.Message}");
+                return View(model);
             }
             catch (Exception ex)
             {
-                ModelState.AddModelError(string.Empty, ex.Message);
+                _logger.LogError(ex, "Error updating status via Web API");
+                ModelState.AddModelError(string.Empty, $"Communication failure: {ex.Message}");
                 return View(model);
             }
         }
@@ -188,21 +223,72 @@ namespace TechMove.GLMS.Web.Controllers
         // GET: Contracts/DownloadAgreement/5
         public async Task<IActionResult> DownloadAgreement(int id)
         {
-            var contract = await _contractService.GetContractDetailsAsync(id);
-            if (contract == null || string.IsNullOrWhiteSpace(contract.AgreementFilePath))
+            try
             {
-                TempData["ErrorMessage"] = "No signed agreement is associated with this contract.";
+                var fileResult = await _contractApiClient.DownloadAgreementAsync(id);
+                if (fileResult == null)
+                {
+                    TempData["ErrorMessage"] = "No signed agreement found for this contract on the server storage.";
+                    return RedirectToAction(nameof(Details), new { id });
+                }
+
+                return File(fileResult.Value.FileBytes, fileResult.Value.ContentType, fileResult.Value.FileName);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to download agreement via Web API for ID {Id}", id);
+                TempData["ErrorMessage"] = $"Could not download agreement: {ex.Message}";
                 return RedirectToAction(nameof(Details), new { id });
             }
+        }
 
-            var fileData = _fileStorageService.GetFileForDownload(contract.AgreementFilePath, contract.AgreementFileName);
-            if (fileData == null)
+        private async Task PopulateClientsDropdownAsync(CreateContractViewModel model)
+        {
+            try
             {
-                TempData["ErrorMessage"] = "Agreement file could not be found on server storage.";
-                return RedirectToAction(nameof(Details), new { id });
+                var clients = await _clientApiClient.GetClientsAsync();
+                model.ClientsList = new SelectList(clients, "Id", "Name", model.ClientId);
             }
+            catch
+            {
+                model.ClientsList = new SelectList(Enumerable.Empty<SelectListItem>());
+            }
+        }
 
-            return File(fileData.Value.fileBytes, fileData.Value.contentType, fileData.Value.downloadName);
+        private static Contract MapToContract(ApiContractDto dto)
+        {
+            return new Contract
+            {
+                Id = dto.Id,
+                ContractNumber = dto.ContractNumber,
+                Title = dto.Title,
+                ClientId = dto.ClientId,
+                Client = new Client
+                {
+                    Id = dto.ClientId,
+                    Name = dto.ClientName,
+                    Region = "Global"
+                },
+                StartDate = dto.StartDate,
+                EndDate = dto.EndDate,
+                Status = dto.Status,
+                ServiceLevel = dto.ServiceLevel,
+                ContractType = dto.ContractType,
+                EstimatedValueUsd = dto.EstimatedValueUsd,
+                EstimatedValueZar = dto.EstimatedValueZar,
+                AgreementFileName = dto.AgreementFileName,
+                CreatedAt = dto.CreatedAt,
+                StatusLogs = dto.StatusLogs?.Select(l => new ContractStatusLog
+                {
+                    Id = l.Id,
+                    ContractId = dto.Id,
+                    OldStatus = l.OldStatus,
+                    NewStatus = l.NewStatus,
+                    Department = l.Department,
+                    ActionTaken = l.ActionTaken,
+                    Timestamp = l.Timestamp
+                }).ToList() ?? new List<ContractStatusLog>()
+            };
         }
     }
 }

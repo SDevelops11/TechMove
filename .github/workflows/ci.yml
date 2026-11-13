@@ -8,7 +8,7 @@ on:
 
 jobs:
   build-and-test:
-    name: Build & Run Automated Unit Tests
+    name: Build & Run Automated Unit & Integration Tests
     runs-on: ubuntu-latest
 
     steps:
@@ -26,5 +26,5 @@ jobs:
     - name: Build Solution (Release)
       run: dotnet build TechMove.sln --configuration Release --no-restore
 
-    - name: Execute Automated Unit & Business Logic Tests
+    - name: Execute Automated Unit & API Integration Tests
       run: dotnet test TechMove.sln --configuration Release --no-build --verbosity normal --logger "trx;LogFileName=test_results.trx"

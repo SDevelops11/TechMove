@@ -1,0 +1,68 @@
+@model TechMove.GLMS.Web.Controllers.LoginViewModel
+@{
+    ViewData["Title"] = "Enterprise Authentication";
+}
+
+<div class="row justify-content-center my-5">
+    <div class="col-md-6 col-lg-5">
+        <div class="card shadow-lg border-0" style="border-radius: 16px;">
+            <div class="card-header bg-primary text-white p-4" style="border-top-left-radius: 16px; border-top-right-radius: 16px;">
+                <div class="d-flex align-items-center">
+                    <div class="rounded-circle bg-white text-primary p-3 me-3">
+                        <i class="fa-solid fa-shield-halved fa-2x"></i>
+                    </div>
+                    <div>
+                        <h4 class="fw-bold mb-0">GLMS Authentication</h4>
+                        <small class="text-white-50">JWT Bearer Security Layer (Part 3)</small>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body p-4">
+                <p class="text-muted small mb-4">
+                    Authenticate to acquire a cryptographic JWT access token for communicating with the decoupled <code>TechMove.GLMS.API</code> backend microservice.
+                </p>
+
+                <form asp-action="Login" method="post">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" asp-for="ReturnUrl" />
+
+                    <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+
+                    <div class="mb-3">
+                        <label asp-for="Email" class="form-label fw-semibold">Email / Account ID</label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="fa-solid fa-envelope"></i></span>
+                            <input asp-for="Email" class="form-control" placeholder="user@techmove.com" />
+                        </div>
+                        <span asp-validation-for="Email" class="text-danger small"></span>
+                    </div>
+
+                    <div class="mb-4">
+                        <label asp-for="Password" class="form-label fw-semibold">Password</label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="fa-solid fa-lock"></i></span>
+                            <input asp-for="Password" class="form-control" type="password" />
+                        </div>
+                        <span asp-validation-for="Password" class="text-danger small"></span>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary w-100 py-2 fw-semibold">
+                        <i class="fa-solid fa-key me-2"></i> Acquire JWT Token & Sign In
+                    </button>
+                </form>
+
+                <hr class="my-4" />
+
+                <div class="bg-light p-3 rounded">
+                    <h6 class="fw-bold small text-dark mb-2"><i class="fa-solid fa-info-circle text-info me-1"></i> Demo Credentials (Grading / Evaluation):</h6>
+                    <ul class="list-unstyled mb-0 small text-muted">
+                        <li><strong>Administrator:</strong> <code>admin@techmove.com</code> | <code>Admin@123</code></li>
+                        <li><strong>Logistics Manager:</strong> <code>manager@techmove.com</code> | <code>Manager@123</code></li>
+                        <li><strong>Operator:</strong> <code>operator@techmove.com</code> | <code>Operator@123</code></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+

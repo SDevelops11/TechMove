@@ -1,8 +1,8 @@
 using Microsoft.Extensions.Logging;
 using Moq;
-using TechMove.GLMS.Web.Models;
-using TechMove.GLMS.Web.Observers;
-using TechMove.GLMS.Web.Services;
+using TechMove.GLMS.API.Models;
+using TechMove.GLMS.API.Observers;
+using TechMove.GLMS.API.Services;
 using Xunit;
 
 namespace TechMove.GLMS.Tests
@@ -115,8 +115,8 @@ namespace TechMove.GLMS.Tests
         {
             // Lightweight instance for pure workflow rule testing
             return new ContractService(
-                Mock.Of<TechMove.GLMS.Web.Repositories.IContractRepository>(),
-                Mock.Of<TechMove.GLMS.Web.Factories.IContractFactory>(),
+                Mock.Of<TechMove.GLMS.API.Repositories.IContractRepository>(),
+                Mock.Of<TechMove.GLMS.API.Factories.IContractFactory>(),
                 Mock.Of<IContractNotifier>(),
                 Mock.Of<IFileStorageService>(),
                 Mock.Of<IExchangeRateService>(),
@@ -125,3 +125,4 @@ namespace TechMove.GLMS.Tests
         }
     }
 }
+

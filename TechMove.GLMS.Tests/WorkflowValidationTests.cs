@@ -1,10 +1,10 @@
 using Microsoft.Extensions.Logging;
 using Moq;
-using TechMove.GLMS.Web.Factories;
-using TechMove.GLMS.Web.Models;
-using TechMove.GLMS.Web.Repositories;
-using TechMove.GLMS.Web.Services;
-using TechMove.GLMS.Web.Strategies;
+using TechMove.GLMS.API.Factories;
+using TechMove.GLMS.API.Models;
+using TechMove.GLMS.API.Repositories;
+using TechMove.GLMS.API.Services;
+using TechMove.GLMS.API.Strategies;
 using Xunit;
 
 namespace TechMove.GLMS.Tests
@@ -206,3 +206,4 @@ namespace TechMove.GLMS.Tests
         }
     }
 }
+

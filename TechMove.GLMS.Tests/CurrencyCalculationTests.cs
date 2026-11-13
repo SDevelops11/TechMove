@@ -1,7 +1,7 @@
 using Microsoft.Extensions.Logging;
 using Moq;
-using TechMove.GLMS.Web.Services;
-using TechMove.GLMS.Web.Strategies;
+using TechMove.GLMS.API.Services;
+using TechMove.GLMS.API.Strategies;
 using Xunit;
 
 namespace TechMove.GLMS.Tests
@@ -138,3 +138,4 @@ namespace TechMove.GLMS.Tests
         }
     }
 }
+

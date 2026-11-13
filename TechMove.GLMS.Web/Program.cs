@@ -1,78 +1,61 @@
-using Microsoft.EntityFrameworkCore;
-using TechMove.GLMS.Web.Data;
-using TechMove.GLMS.Web.Factories;
-using TechMove.GLMS.Web.Observers;
-using TechMove.GLMS.Web.Repositories;
-using TechMove.GLMS.Web.Services;
-using TechMove.GLMS.Web.Strategies;
+using TechMove.GLMS.Web.Services.ApiClients;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // 1. Add MVC Controllers & Views
 builder.Services.AddControllersWithViews();
 
-// 2. Add In-Memory Caching for Currency API rates
-builder.Services.AddMemoryCache();
+// 2. Configure Backend Web API Base Address
+// Resolves local development endpoint (http://localhost:5000) or Docker container service name (http://glms-backend-api:8080)
+var apiBaseUrl = builder.Configuration["ApiSettings:BaseUrl"]
+    ?? Environment.GetEnvironmentVariable("ApiSettings__BaseUrl")
+    ?? "http://localhost:5000";
 
-// 3. Database Context (Entity Framework Core with SQL Server)
-var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
-    ?? "Server=(localdb)\\mssqllocaldb;Database=TechMoveGLMS_Db;Trusted_Connection=True;MultipleActiveResultSets=true;TrustServerCertificate=True";
-
-builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseSqlServer(connectionString));
-
-// 4. Register External API HttpClient with Resilience
-builder.Services.AddHttpClient<IExchangeRateService, ExchangeRateService>(client =>
+if (!apiBaseUrl.EndsWith("/"))
 {
-    client.Timeout = TimeSpan.FromSeconds(10);
-    client.DefaultRequestHeaders.Add("User-Agent", "TechMove-GLMS/1.0");
+    apiBaseUrl += "/";
+}
+
+var apiUri = new Uri(apiBaseUrl);
+
+// 3. Register Typed HttpClients for Frontend Service Layer (Decoupled SOA Architecture)
+// Zero SQL dependencies in MVC: All operations communicate with TechMove.GLMS.API
+builder.Services.AddHttpClient<IAuthApiClient, AuthApiClient>(client =>
+{
+    client.BaseAddress = apiUri;
+    client.Timeout = TimeSpan.FromSeconds(15);
+    client.DefaultRequestHeaders.Add("User-Agent", "TechMove-GLMS-WebClient/2.0");
 });
 
-// 5. Register Data Repositories
-builder.Services.AddScoped<IClientRepository, ClientRepository>();
-builder.Services.AddScoped<IContractRepository, ContractRepository>();
-builder.Services.AddScoped<IServiceRequestRepository, ServiceRequestRepository>();
+builder.Services.AddHttpClient<IContractApiClient, ContractApiClient>(client =>
+{
+    client.BaseAddress = apiUri;
+    client.Timeout = TimeSpan.FromSeconds(15);
+    client.DefaultRequestHeaders.Add("User-Agent", "TechMove-GLMS-WebClient/2.0");
+});
 
-// 6. Register Design Pattern 1: Factory Pattern
-builder.Services.AddSingleton<IContractNumberGenerator, ContractNumberGenerator>();
-builder.Services.AddScoped<IContractFactory, ContractFactory>();
+builder.Services.AddHttpClient<IClientApiClient, ClientApiClient>(client =>
+{
+    client.BaseAddress = apiUri;
+    client.Timeout = TimeSpan.FromSeconds(15);
+    client.DefaultRequestHeaders.Add("User-Agent", "TechMove-GLMS-WebClient/2.0");
+});
 
-// 7. Register Design Pattern 2: Observer Pattern (4 Departmental Observers)
-builder.Services.AddScoped<IContractObserver, OperationsDepartmentObserver>();
-builder.Services.AddScoped<IContractObserver, FinanceDepartmentObserver>();
-builder.Services.AddScoped<IContractObserver, ClientServicesObserver>();
-builder.Services.AddScoped<IContractObserver, ComplianceDepartmentObserver>();
-builder.Services.AddScoped<IContractNotifier, ContractNotifier>();
+builder.Services.AddHttpClient<IServiceRequestApiClient, ServiceRequestApiClient>(client =>
+{
+    client.BaseAddress = apiUri;
+    client.Timeout = TimeSpan.FromSeconds(15);
+    client.DefaultRequestHeaders.Add("User-Agent", "TechMove-GLMS-WebClient/2.0");
+});
 
-// 8. Register Design Pattern 3: Strategy Pattern (Currency Conversion Algorithms)
-builder.Services.AddScoped<ICurrencyConverter, UsdToZarConverter>();
-builder.Services.AddScoped<ICurrencyConverter, EurToZarConverter>();
-builder.Services.AddScoped<ICurrencyConverter, GbpToZarConverter>();
-builder.Services.AddScoped<ICurrencyConverter, ApiBasedConverter>();
-builder.Services.AddScoped<ICurrencyConversionContext, CurrencyConversionContext>();
-
-// 9. Register Storage & Business Services
-builder.Services.AddScoped<IFileStorageService, FileStorageService>();
-builder.Services.AddScoped<IContractService, ContractService>();
-builder.Services.AddScoped<IServiceRequestService, ServiceRequestService>();
+builder.Services.AddHttpClient<ICurrencyApiClient, CurrencyApiClient>(client =>
+{
+    client.BaseAddress = apiUri;
+    client.Timeout = TimeSpan.FromSeconds(15);
+    client.DefaultRequestHeaders.Add("User-Agent", "TechMove-GLMS-WebClient/2.0");
+});
 
 var app = builder.Build();
-
-// Ensure Database is Created and Seeded on application startup
-using (var scope = app.Services.CreateScope())
-{
-    var services = scope.ServiceProvider;
-    try
-    {
-        var context = services.GetRequiredService<AppDbContext>();
-        context.Database.EnsureCreated();
-    }
-    catch (Exception ex)
-    {
-        var logger = services.GetRequiredService<ILogger<Program>>();
-        logger.LogError(ex, "An error occurred while creating or seeding the GLMS database.");
-    }
-}
 
 // HTTP request pipeline
 if (!app.Environment.IsDevelopment())

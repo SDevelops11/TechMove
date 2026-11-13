@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Moq;
-using TechMove.GLMS.Web.Services;
+using TechMove.GLMS.API.Services;
 using Xunit;
 
 namespace TechMove.GLMS.Tests
@@ -129,3 +129,4 @@ namespace TechMove.GLMS.Tests
         }
     }
 }
+

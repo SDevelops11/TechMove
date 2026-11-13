@@ -1,49 +1,101 @@
 using System.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
 using TechMove.GLMS.Web.Models;
-using TechMove.GLMS.Web.Services;
+using TechMove.GLMS.Web.Services.ApiClients;
 using TechMove.GLMS.Web.ViewModels;
 
 namespace TechMove.GLMS.Web.Controllers
 {
     public class HomeController : Controller
     {
-        private readonly IContractService _contractService;
-        private readonly IServiceRequestService _requestService;
-        private readonly IExchangeRateService _rateService;
+        private readonly IContractApiClient _contractApiClient;
+        private readonly IServiceRequestApiClient _requestApiClient;
+        private readonly ICurrencyApiClient _currencyApiClient;
+        private readonly ILogger<HomeController> _logger;
 
         public HomeController(
-            IContractService contractService,
-            IServiceRequestService requestService,
-            IExchangeRateService rateService)
+            IContractApiClient contractApiClient,
+            IServiceRequestApiClient requestApiClient,
+            ICurrencyApiClient currencyApiClient,
+            ILogger<HomeController> logger)
         {
-            _contractService = contractService;
-            _requestService = requestService;
-            _rateService = rateService;
+            _contractApiClient = contractApiClient;
+            _requestApiClient = requestApiClient;
+            _currencyApiClient = currencyApiClient;
+            _logger = logger;
         }
 
         public async Task<IActionResult> Index()
         {
-            var allContracts = await _contractService.GetAllContractsAsync();
-            var allRequests = await _requestService.GetAllRequestsAsync();
-            var usdRate = await _rateService.GetExchangeRateAsync("USD", "ZAR");
-
-            var model = new DashboardViewModel
+            try
             {
-                TotalContracts = allContracts.Count,
-                ActiveContracts = allContracts.Count(c => c.Status == ContractStatus.Active),
-                OnHoldContracts = allContracts.Count(c => c.Status == ContractStatus.OnHold),
-                ExpiredContracts = allContracts.Count(c => c.Status == ContractStatus.Expired),
-                DraftContracts = allContracts.Count(c => c.Status == ContractStatus.Draft),
-                TotalServiceRequests = allRequests.Count,
-                TotalContractValueZar = allContracts.Sum(c => c.EstimatedValueZar),
-                TotalDispatchedCostZar = allRequests.Sum(r => r.Cost),
-                CurrentUsdZarRate = usdRate,
-                RecentContracts = allContracts.Take(5).ToList(),
-                RecentServiceRequests = allRequests.Take(5).ToList()
-            };
+                var allContractsDto = await _contractApiClient.GetContractsAsync();
+                var allRequestsDto = await _requestApiClient.GetAllRequestsAsync();
+                var usdRate = await _currencyApiClient.GetExchangeRateAsync("USD", "ZAR");
 
-            return View(model);
+                var allContracts = allContractsDto.Select(c => new Contract
+                {
+                    Id = c.Id,
+                    ContractNumber = c.ContractNumber,
+                    Title = c.Title,
+                    ClientId = c.ClientId,
+                    Client = new Client { Id = c.ClientId, Name = c.ClientName, Region = "Global" },
+                    StartDate = c.StartDate,
+                    EndDate = c.EndDate,
+                    Status = c.Status,
+                    ServiceLevel = c.ServiceLevel,
+                    ContractType = c.ContractType,
+                    EstimatedValueUsd = c.EstimatedValueUsd,
+                    EstimatedValueZar = c.EstimatedValueZar,
+                    AgreementFileName = c.AgreementFileName,
+                    CreatedAt = c.CreatedAt
+                }).ToList();
+
+                var allRequests = allRequestsDto.Select(r => new ServiceRequest
+                {
+                    Id = r.Id,
+                    RequestNumber = r.RequestNumber,
+                    ContractId = r.ContractId,
+                    Contract = new Contract { ContractNumber = r.ContractNumber, Title = r.ContractTitle },
+                    Description = r.Description,
+                    Origin = r.Origin,
+                    Destination = r.Destination,
+                    Cost = r.Cost,
+                    OriginalCostUsd = r.OriginalCostUsd,
+                    OriginalCurrency = r.OriginalCurrency,
+                    ExchangeRateUsed = r.ExchangeRateUsed,
+                    Status = r.Status,
+                    CreatedDate = r.CreatedDate
+                }).ToList();
+
+                var model = new DashboardViewModel
+                {
+                    TotalContracts = allContracts.Count,
+                    ActiveContracts = allContracts.Count(c => c.Status == ContractStatus.Active),
+                    OnHoldContracts = allContracts.Count(c => c.Status == ContractStatus.OnHold),
+                    ExpiredContracts = allContracts.Count(c => c.Status == ContractStatus.Expired),
+                    DraftContracts = allContracts.Count(c => c.Status == ContractStatus.Draft),
+                    TotalServiceRequests = allRequests.Count,
+                    TotalContractValueZar = allContracts.Sum(c => c.EstimatedValueZar),
+                    TotalDispatchedCostZar = allRequests.Sum(r => r.Cost),
+                    CurrentUsdZarRate = usdRate,
+                    RecentContracts = allContracts.Take(5).ToList(),
+                    RecentServiceRequests = allRequests.Take(5).ToList()
+                };
+
+                return View(model);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to load dashboard metrics from Backend Web API");
+                TempData["ErrorMessage"] = "Could not communicate with Backend Web API service. Ensure the API is running.";
+
+                return View(new DashboardViewModel
+                {
+                    RecentContracts = new List<Contract>(),
+                    RecentServiceRequests = new List<ServiceRequest>()
+                });
+            }
         }
 
         public IActionResult Privacy()
